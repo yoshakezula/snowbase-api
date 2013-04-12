@@ -21,14 +21,14 @@ if !development?
 
   db = get_connection
   
-  set :server, 'thin'
+  # set :server, 'thin'
 
-  use Rack::CommonLogger
+  # use Rack::CommonLogger
 
-  log = File.new("logs/sinatra.log", "a+")
-  log.sync = true
-  STDOUT.reopen(log)
-  STDERR.reopen(log)
+  # log = File.new("logs/sinatra.log", "a+")
+  # log.sync = true
+  # STDOUT.reopen(log)
+  # STDERR.reopen(log)
 end
 
 get '/add-resort/:name' do
