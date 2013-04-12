@@ -1,0 +1,10 @@
+source 'https://rubygems.org'
+
+gem 'sinatra'
+gem 'mongo'
+gem 'mongoid'
+gem 'json'
+gem 'thin'
+gem 'nokogiri'
+gem 'debugger'
+gem 'sinatra-reloader'
