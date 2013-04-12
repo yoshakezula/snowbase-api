@@ -55,13 +55,13 @@ end
 
 get '/resorts' do
   content_type :json
-  headers 'Access-Control-Allow-Origin' => 'http://localhost:3000'
+  headers 'Access-Control-Allow-Origin' => 'http://snowbase.kennychan.co'
   Resort.all.to_json
 end
 
 get '/snow-days' do
   content_type :json
-  headers 'Access-Control-Allow-Origin' => 'http://localhost:3000'
+  headers 'Access-Control-Allow-Origin' => 'http://snowbase.kennychan.co'
   normalize_data.to_json
   # SnowDay.all.to_json
 end
@@ -80,7 +80,7 @@ end
 
 get '/snow-days/:resort_name' do
   content_type :json
-  headers 'Access-Control-Allow-Origin' => 'http://localhost:3000'
+  headers 'Access-Control-Allow-Origin' => 'http://snowbase.kennychan.co'
   normalize_data[params[:resort_name]].to_json
   # SnowDay.where(resort_name: params[:resort_name]).all.to_json
 end
