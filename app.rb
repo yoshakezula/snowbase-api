@@ -59,11 +59,16 @@ get '/resorts' do
   Resort.all.to_json
 end
 
-get '/snow-days' do
+get '/snow-days-map' do
   content_type :json
   headers 'Access-Control-Allow-Origin' => 'http://snowbase.kennychan.co'
   normalize_data.to_json
   # SnowDay.all.to_json
+end
+
+get '/snow-days' do
+  content_type :json
+  SnowDay.all.to_json
 end
 
 get '/delete-snow-days' do
