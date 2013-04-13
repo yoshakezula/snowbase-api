@@ -15,6 +15,7 @@ def pullDataFor(resort)
 		begin
 			doc = Nokogiri::HTML(open(uri))
 			days = doc.css('table.snowfall tr:not(.titleRow)')
+			previous_base = nil
 			days.each do |day|
 				cols = day.css('td')
 				date = Date.parse cols[0].text
@@ -27,7 +28,19 @@ def pullDataFor(resort)
 
 				resort_id = Resort.where(:resort_name => resort_name).first_or_create._id
 
+				base = cols[3].text.match(/[0-9]+/)[0].to_i
+
+				#Skip day if the data is way off
+				if !previous_base
+					previous_base = base
+				else
+					p 'skipping day because data is crap'
+					next if ((base.to_f / previous_base.to_f) - 1).abs > 0.3
+				end
+
 				existing_day = SnowDay.where(:resort_name => resort_name, :date_string => date_string).first
+
+
 
 				if !existing_day
 					p 'Creating snow day for ' + resort_name + ': ' + date_string
@@ -36,7 +49,7 @@ def pullDataFor(resort)
 						date_string: date_string,
 						date: date,
 						resort_id: resort_id,
-						base: cols[3].text.match(/[0-9]+/)[0].to_i,
+						base: base,
 						precipitation: cols[1].text.match(/[0-9]+/)[0].to_i,
 						season_snow: cols[3].text.match(/[0-9]+/)[0].to_i
 					)
