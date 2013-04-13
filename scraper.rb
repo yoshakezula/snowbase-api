@@ -26,7 +26,7 @@ def pullDataFor(resort)
 
 				date_string = date_string.to_s
 
-				resort_id = Resort.where(:resort_name => resort_name).first_or_create._id
+				resort_id = Resort.where(:name => resort_name).first_or_create._id
 
 				base = cols[3].text.match(/[0-9]+/)[0].to_i
 
