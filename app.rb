@@ -71,9 +71,9 @@ get '/snow-days' do
   SnowDay.all.to_json
 end
 
-get '/delete-snow-days' do
+get '/delete-snow-days-for/:name' do
   content_type :json
-  SnowDay.destroy_all
+  SnowDay.where(:resort_name => params[:name]).destroy_all
   SnowDay.all.to_json
 end
 
