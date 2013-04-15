@@ -15,7 +15,8 @@ def pullDataFor(resort)
 		begin
 			doc = Nokogiri::HTML(open(uri))
 			days = doc.css('table.snowfall tr:not(.titleRow)')
-			previous_base = nil
+			# previous_base = nil
+			# previous_month = 1
 			days.each do |day|
 				cols = day.css('td')
 				date = Date.parse cols[0].text
@@ -30,17 +31,22 @@ def pullDataFor(resort)
 
 				base = cols[3].text.match(/[0-9]+/)[0].to_i
 
-				#Skip day if the data is way off
-				if !previous_base
-					previous_base = base
-				else
-					p 'skipping day because data is crap'
-					next if ((base.to_f / previous_base.to_f) - 1).abs > 0.3
-				end
+				# #if we've skipped ahead more than 2 months, then reset the previous_base var
+				# if date.month - previous_month > 2
+				# 	previous_base = nil
+				# 	p 'resetting previous_base because entering the next season'
+				# end
+				# previous_month = date.month
+
+				# #Skip day if the data is way off
+				# if previous_base && ((base.to_f / previous_base.to_f) - 1).abs > 0.3
+				# 	p 'skipping ' + date_string + ' because data is crap. ' + 'previous day: ' + previous_base.to_s + '. this base: ' + base.to_s
+				# 	next
+				# end
+				# #set the previous_base var to today
+				# previous_base = base
 
 				existing_day = SnowDay.where(:resort_name => resort_name, :date_string => date_string).first
-
-
 
 				if !existing_day
 					p 'Creating snow day for ' + resort_name + ': ' + date_string
@@ -54,7 +60,7 @@ def pullDataFor(resort)
 						season_snow: cols[3].text.match(/[0-9]+/)[0].to_i
 					)
 				else
-					if $skipExistingDays
+					if $skipExistingDays && (date.year != Time.now.year) #never skip if the date is this year, because we always want to update for most recent year. But we can ignore past years
 						p 'Existing snow day found for ' + resort_name + ': ' + date_string + ', skipping'
 					else
 						p 'Updating snow day for ' + resort_name + ': ' + date_string
@@ -65,7 +71,8 @@ def pullDataFor(resort)
 							resort_id: resort_id,
 							base: cols[3].text.match(/[0-9]+/)[0].to_i,
 							precipitation: cols[1].text.match(/[0-9]+/)[0].to_i,
-							season_snow: cols[3].text.match(/[0-9]+/)[0].to_i
+							season_snow: cols[3].text.match(/[0-9]+/)[0].to_i,
+							generated: false
 						)
 					end
 				end

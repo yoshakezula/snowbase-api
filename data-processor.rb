@@ -28,6 +28,7 @@ end
 
 $data_map = {}
 def normalize_data()
+	p 'starting to build data map'
 	$data_map = {}
 	#Get list of resorts and go through each
 	SnowDay.distinct(:resort_name).each do |resort_name|
@@ -106,21 +107,25 @@ def normalize_data()
 			$data_map[resort_name][season_name][date_string] = day
 		end
 	end
+	p 'built data map'
 	$data_map
 end
 
 def build_season_data
+	p 'starting to build season data'
 	data_map = normalize_data()
 	if data_map == nil
 		p 'no data map returned'
 		return
 	end
+
 	#Get list of resorts and go through each
 	resort_names = SnowDay.distinct(:resort_name)
 
 	#Go through each resort
 	resort_names.each do |resort_name|
-		resort_id = Resort.where(:resort_name => resort_name).first_or_create._id
+		p 'building season data for ' + resort_name
+		resort_id = Resort.where(:name => resort_name).first_or_create._id
 		snow_days = SnowDay.where(:resort_name => resort_name).order_by(:date.asc)
 		season_start_years = snow_days.distinct(:season_start_year)
 
@@ -183,6 +188,24 @@ def build_season_data
 						end
 					else
 						#We found a snowday
+
+						# Make sure data isn't way off, and destroy document if the change in snow base is over 40. Also make sure we don't destroy days we just created
+						base_diff = data_map[resort_name][season_name][date_string].base - data_map[resort_name][season_name][previous_found_date_string].base
+						if (base_diff > 40 || base_diff < -40) && !data_map[resort_name][season_name][date_string].generated
+							p 'deleting snowday for ' + resort_name + ': ' + date_string.to_s + ' because data is way off. difference of ' + base_diff.to_s
+
+							# push to missing date array to keep running tally
+							str = date_string.to_s
+							date = Date.new(str.slice(0,4).to_i, str.slice(4,2).to_i, str.slice(6,2).to_i)
+							missing_dates.push date
+							missing_date_strings.push date_string
+							missing_season_days.push season_day
+
+							SnowDay.where(:resort_name => resort_name, :date_string => date_string).destroy
+
+							next
+						end
+
 						#add a seasonday attribute
 						data_map[resort_name][season_name][date_string].update_attributes(
 							season_day: season_day
@@ -190,13 +213,14 @@ def build_season_data
 
 						#check if we have a queue of missing days, and then fill out the dates in between
 						if missing_dates.length > 0
-							base_diff = data_map[resort_name][season_name][date_string].base - data_map[resort_name][season_name][previous_found_date_string].base
+							# if season_name == '2012-13' then debugger end
 							season_snow_diff = data_map[resort_name][season_name][date_string].season_snow - data_map[resort_name][season_name][previous_found_date_string].season_snow
 							if season_snow_diff < 0 ; season_snow_diff = 0 ; end
 
-							incremental_base_diff = base_diff / (missing_dates.length + 1)
-							incremental_season_snow_diff = season_snow_diff / (missing_dates.length + 1)
+							incremental_base_diff = base_diff.to_f / (missing_dates.length + 1)
+							incremental_season_snow_diff = season_snow_diff.to_f / (missing_dates.length + 1)
 							i = -1
+							p 
 							missing_dates.each do |date|
 								i+=1
 								new_day = SnowDay.create(
@@ -218,10 +242,9 @@ def build_season_data
 							missing_dates = []
 							missing_date_strings = []
 							missing_season_days = []
-
-							#Populate the previousDayString so we can know where the start point is for the interpolation
-							previous_found_date_string = date_string
 						end
+						#Populate the previousDayString so we can know where the start point is for the interpolation
+						previous_found_date_string = date_string
 					end
 				rescue Exception => e
 					p 'Error with ' + resort_name + ': ' + date_string.to_s
@@ -232,6 +255,7 @@ def build_season_data
 			end
 		end
 	end
+	p 'done building season data'
 end
 
 

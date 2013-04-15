@@ -37,9 +37,9 @@ get '/add-resort/:name' do
   resort.to_json
 end
 
-get '/delete-resort/:name' do
+get '/delete-resort/:id' do
   content_type :json
-  resort = Resort.where(name: params[:name]).first
+  resort = Resort.where(_id: params[:id]).first
   if resort
     resort.destroy
   end
@@ -48,26 +48,38 @@ end
 
 get '/pull/:name' do
   content_type :json
-  resort = Resort.where(name: params[:name]).first_or_create
-  pullDataFor(resort)
+  if params[:name] == 'all'
+    Resort.all.each do |resort|
+      pullDataFor(resort)
+    end
+  else
+    resort = Resort.where(name: params[:name]).first_or_create
+    pullDataFor(resort)
+  end
+  build_season_data
   SnowDay.all.to_json
 end
 
 get '/resorts' do
   content_type :json
-  headers 'Access-Control-Allow-Origin' => 'http://snowbase.kennychan.co'
   Resort.all.to_json
 end
 
 get '/snow-days-map' do
   content_type :json
-  headers 'Access-Control-Allow-Origin' => 'http://snowbase.kennychan.co'
   normalize_data.to_json
   # SnowDay.all.to_json
 end
 
 get '/snow-days' do
   content_type :json
+  SnowDay.all.to_json
+# end
+
+get '/delete-generated-snow-days' do
+  content_type :json
+  #destroy previously-generatd snowdays
+  SnowDay.where(:generated => true).destroy_all
   SnowDay.all.to_json
 end
 
@@ -85,7 +97,5 @@ end
 
 get '/snow-days/:resort_name' do
   content_type :json
-  headers 'Access-Control-Allow-Origin' => 'http://snowbase.kennychan.co'
   normalize_data[params[:resort_name]].to_json
-  # SnowDay.where(resort_name: params[:resort_name]).all.to_json
 end
