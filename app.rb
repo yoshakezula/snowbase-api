@@ -74,7 +74,7 @@ end
 get '/snow-days' do
   content_type :json
   SnowDay.all.to_json
-# end
+end
 
 get '/delete-generated-snow-days' do
   content_type :json
