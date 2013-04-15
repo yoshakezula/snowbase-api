@@ -56,7 +56,6 @@ get '/pull/:name' do
     resort = Resort.where(name: params[:name]).first_or_create
     pullDataFor(resort)
   end
-  build_season_data
   SnowDay.all.to_json
 end
 
