@@ -36,7 +36,7 @@ get '/delete-resort/:id' do
   resort = Resort.where(_id: params[:id]).first
   if resort
     resort.destroy
-    'deleted'
+    redirect to '/delete-snow-days-for/' + params[:id]
   else
     'couldn\'t find resort'
   end
@@ -59,6 +59,10 @@ post '/update-resort' do
   )
   redirect to '/resorts' + resort.name
 end
+
+# get '/log' do 
+#   send_file File.join('logs', 'scraper_log.txt')
+# end
 
 get '/pull/:state/:name' do
   content_type :json
@@ -105,10 +109,10 @@ get '/delete-generated-snow-days' do
   SnowDay.all.to_json
 end
 
-get '/delete-snow-days-for/:name' do
+get '/delete-snow-days-for/:resort_id' do
   content_type :json
-  SnowDay.where(:resort_name => params[:name]).destroy_all
-  SnowDay.all.to_json
+  SnowDay.where(:resort_id => params[:resort_id]).destroy_all
+  'deleted'
 end
 
 get '/build-season-data' do

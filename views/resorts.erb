@@ -8,7 +8,7 @@
 <% @resorts.each do |resort|  %>
 <div class='resort'>
 	<span class="resort-name"><%= resort.name %></span>
-	&nbsp;<a href="/resort/<%=resort.name%>">edit</a>&nbsp;<a href="/pull/<%=resort.state%>/<%=resort.name%>">pull data</a>
+	&nbsp;<a href="/resort/<%=resort.name%>">edit</a>&nbsp;<a href="/pull/<%=resort.state%>/<%=resort.name%>">pull data</a>&nbsp;<a href="/delete-resort/<%=resort._id%>">delete</a>
 </div>
 <% end %>
 <a href="/build-season-data">Build Season Data</a>
