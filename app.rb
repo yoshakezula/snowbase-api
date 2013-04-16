@@ -57,7 +57,7 @@ post '/update-resort' do
     formatted_name: params[:formatted_name],
     state: params[:state]
   )
-  redirect to '/resort/' + resort.name
+  redirect to '/resorts' + resort.name
 end
 
 get '/pull/:state/:name' do
