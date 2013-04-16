@@ -10,4 +10,5 @@ class Resort
 
 	field :name, :type => String
 	field :state, :type => String
+	field :formatted_name, :type => String
 end

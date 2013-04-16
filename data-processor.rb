@@ -125,7 +125,7 @@ def build_season_data
 	#Go through each resort
 	resort_names.each do |resort_name|
 		p 'building season data for ' + resort_name
-		resort_id = Resort.where(:name => resort_name).first_or_create._id
+		resort_id = Resort.where(:name => resort_name).first._id
 		snow_days = SnowDay.where(:resort_name => resort_name).order_by(:date.asc)
 		season_start_years = snow_days.distinct(:season_start_year)
 

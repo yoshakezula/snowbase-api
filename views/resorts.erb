@@ -1,0 +1,13 @@
+<html>
+
+<head>
+<title>resorts</title>
+</head>
+<body>
+
+<% @resorts.each do |resort|  %>
+<div class='resort'>
+	<span class="resort-name"><%= resort.name %></span>
+	&nbsp;<a href="/resort/<%=resort.name%>">edit</a>&nbsp;<a href="/pull/<%=resort.state%>/<%=resort.name%>">pull data</a>
+</div>
+<% end %>

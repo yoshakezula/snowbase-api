@@ -10,13 +10,18 @@ def pullDataFor(resort)
 	years = ['2007', '2008', '2009', '2010', '2011', '2012', '2013']
 	resort_name = resort.name
 	years.each do |year|
-		uri = 'http://www.onthesnow.com/colorado/' + resort_name + '/historical-snowfall.html?&y=' + year + '&q=base&v=list#view'
+		uri = 'http://www.onthesnow.com/' + resort.state + '/' + resort_name + '/historical-snowfall.html?&y=' + year + '&q=base&v=list#view'
 		p 'opening nokogiri for ' + uri
 		begin
 			doc = Nokogiri::HTML(open(uri))
+
+			#check for formatted resort name
+			if !resort.formatted_name
+				resort.update_attributes(formatted_name: doc.css('resort_name')[0].text)
+				p 'populating formatted report name: ' + resort.formatted_name
+			end
+
 			days = doc.css('table.snowfall tr:not(.titleRow)')
-			# previous_base = nil
-			# previous_month = 1
 			days.each do |day|
 				cols = day.css('td')
 				date = Date.parse cols[0].text
@@ -27,24 +32,9 @@ def pullDataFor(resort)
 
 				date_string = date_string.to_s
 
-				resort_id = Resort.where(:name => resort_name).first_or_create._id
+				resort_id = Resort.where(:name => resort_name).first._id
 
 				base = cols[3].text.match(/[0-9]+/)[0].to_i
-
-				# #if we've skipped ahead more than 2 months, then reset the previous_base var
-				# if date.month - previous_month > 2
-				# 	previous_base = nil
-				# 	p 'resetting previous_base because entering the next season'
-				# end
-				# previous_month = date.month
-
-				# #Skip day if the data is way off
-				# if previous_base && ((base.to_f / previous_base.to_f) - 1).abs > 0.3
-				# 	p 'skipping ' + date_string + ' because data is crap. ' + 'previous day: ' + previous_base.to_s + '. this base: ' + base.to_s
-				# 	next
-				# end
-				# #set the previous_base var to today
-				# previous_base = base
 
 				existing_day = SnowDay.where(:resort_name => resort_name, :date_string => date_string).first
 

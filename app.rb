@@ -31,37 +31,55 @@ if !development?
   # STDERR.reopen(log)
 end
 
-get '/add-resort/:name' do
-  content_type :json
-  resort = Resort.where(name: params[:name]).first_or_create
-  resort.to_json
-end
-
 get '/delete-resort/:id' do
   content_type :json
   resort = Resort.where(_id: params[:id]).first
   if resort
     resort.destroy
+    'deleted'
+  else
+    'couldn\'t find resort'
   end
-  'deleted'
 end
 
-get '/pull/:name' do
+get '/pull/all' do
   content_type :json
-  if params[:name] == 'all'
-    Resort.all.each do |resort|
-      pullDataFor(resort)
-    end
-  else
-    resort = Resort.where(name: params[:name]).first_or_create
+  Resort.all.each do |resort|
     pullDataFor(resort)
   end
   SnowDay.all.to_json
 end
 
-get '/resorts' do
+post '/update-resort' do
+  resort = Resort.find(params[:id])
+  resort.update_attributes(
+    name: params[:name],
+    formatted_name: params[:formatted_name],
+    state: params[:state]
+  )
+  redirect to '/resort/' + resort.name
+end
+
+get '/pull/:state/:name' do
+  content_type :json
+  resort = Resort.where(name: params[:name], state: params[:state]).first_or_create
+  pullDataFor(resort)
+  SnowDay.all.to_json
+end
+
+get '/api/resorts' do
   content_type :json
   Resort.all.to_json
+end
+
+get '/resorts' do
+  @resorts = Resort.all
+  erb :resorts
+end
+
+get '/resort/:name' do
+  @resort = Resort.where(name: params[:name]).first
+  erb :resort
 end
 
 get '/snow-days-map' do
@@ -70,9 +88,14 @@ get '/snow-days-map' do
   # SnowDay.all.to_json
 end
 
-get '/snow-days' do
+get '/api/snow-days' do
   content_type :json
   SnowDay.all.to_json
+end
+
+get '/api/snow-days/:resort_name' do
+  content_type :json
+  normalize_data[params[:resort_name]].to_json
 end
 
 get '/delete-generated-snow-days' do
@@ -92,9 +115,4 @@ get '/build-season-data' do
   content_type :json
   build_season_data
   SnowDay.all.to_json
-end
-
-get '/snow-days/:resort_name' do
-  content_type :json
-  normalize_data[params[:resort_name]].to_json
 end
