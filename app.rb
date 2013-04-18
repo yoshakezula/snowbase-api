@@ -94,12 +94,14 @@ end
 
 get '/api/snow-days' do
   content_type :json
-  SnowDay.all.to_json
+  query = params[:resort_id] ? SnowDay.where(:resort_id => params[:resort_id]) : SnowDay.all
+  query.to_json
 end
 
 get '/api/snow-days/:resort_name' do
   content_type :json
-  normalize_data[params[:resort_name]].to_json
+  # normalize_data[params[:resort_name]].to_json
+  SnowDay.find(params[:_id]).to_json
 end
 
 get '/delete-generated-snow-days' do
