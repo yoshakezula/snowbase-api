@@ -32,7 +32,7 @@ def normalize_data()
 	$data_map = {}
 	#Get list of resorts and go through each
 	SnowDay.distinct(:resort_name).each do |resort_name|
-		$data_map[resort_name] = {}
+		$data_map[resort_name] = {'average' => {}}
 
 		#initialize the prev_date var so we can check for dupes
 		prev_date = nil
@@ -46,6 +46,12 @@ def normalize_data()
 		first_year = nil
 
 		snowdays.each do |day|
+			#skip if snow day is an average and not an actual day belonging to a season
+			if day.season_name == 'Average'
+				$data_map[resort_name]['average'][day.season_day] = day
+				next
+			end
+
 			if day.date == nil
 				p 'day with null date found, destroying'
 				day.destroy
@@ -114,6 +120,8 @@ end
 def build_season_data
 	p 'starting to build season data'
 	data_map = normalize_data()
+	averages_map = {}
+	averages_denom_map = {}
 	if data_map == nil
 		p 'no data map returned'
 		return
@@ -125,6 +133,8 @@ def build_season_data
 	#Go through each resort
 	resort_names.each do |resort_name|
 		p 'building season data for ' + resort_name
+		averages_map[resort_name] = {}
+		averages_denom_map[resort_name] = {}
 		resort_id = Resort.where(:name => resort_name).first._id
 		snow_days = SnowDay.where(:resort_name => resort_name).order_by(:date.asc)
 		season_start_years = snow_days.distinct(:season_start_year)
@@ -179,6 +189,10 @@ def build_season_data
 								season_end_year: season_start_year + 1,
 								season_name: season_name
 							)
+
+							averages_map[resort_name][season_day] = 0
+							averages_denom_map[resort_name][season_day] = 0
+
 							p 'saved new padding snow day for ' + resort_name + ': ' + date_string.to_s
 						else
 							#day is missing and in the middle of the first and last dates in the season, so push to missing date array to keep running tally
@@ -211,6 +225,15 @@ def build_season_data
 							season_day: season_day
 						)
 
+						#add value to the averages map
+						if data_map[resort_name][season_name][date_string].base > 0
+							averages_map[resort_name][season_day] = data_map[resort_name][season_name][date_string].base + ( averages_map[resort_name][season_day] ? averages_map[resort_name][season_day] : 0)
+							averages_denom_map[resort_name][season_day] = 1 + ( averages_denom_map[resort_name][season_day] ? averages_denom_map[resort_name][season_day] : 0)
+						else 
+							averages_map[resort_name][season_day] = 0
+							averages_denom_map[resort_name][season_day] = 0
+						end
+
 						#check if we have a queue of missing days, and then fill out the dates in between
 						if missing_dates.length > 0
 							# if season_name == '2012-13' then debugger end
@@ -223,13 +246,15 @@ def build_season_data
 							p 
 							missing_dates.each do |date|
 								i+=1
+								base = data_map[resort_name][season_name][previous_found_date_string].base + ((i + 1) * incremental_base_diff)
+								season_day = missing_season_days[i]
 								new_day = SnowDay.create(
 									resort_name: resort_name,
 									date_string: missing_date_strings[i],
 									date: date,
 									resort_id: resort_id,
-									base: data_map[resort_name][season_name][previous_found_date_string].base + ((i + 1) * incremental_base_diff),
-									season_day: missing_season_days[i],
+									base: base,
+									season_day: season_day,
 									precipitation: 0,
 									season_snow: data_map[resort_name][season_name][previous_found_date_string].season_snow + ((i + 1) * incremental_season_snow_diff),
 									generated: true,
@@ -237,6 +262,15 @@ def build_season_data
 									season_end_year: season_start_year + 1,
 									season_name: season_name
 								)
+								#add value to the averages map
+								if base > 0
+									averages_map[resort_name][season_day] = base + ( averages_map[resort_name][season_day] ? averages_map[resort_name][season_day] : 0)
+									averages_denom_map[resort_name][season_day] = 1 + ( averages_denom_map[resort_name][season_day] ? averages_denom_map[resort_name][season_day] : 0)
+								else 
+									averages_map[resort_name][season_day] = 0
+									averages_denom_map[resort_name][season_day] = 0
+								end
+
 								p 'saved new interpolated snow day for ' + resort_name + ': ' + missing_date_strings[i].to_s
 							end
 							missing_dates = []
@@ -251,7 +285,30 @@ def build_season_data
 					p e.inspect
 					p e.backtrace
 				end
+			end
+		end
 
+		#calculate averages
+		# debugger
+		averages_map.each do |resort_name, resort_data|
+			resort_data.each do |season_day, season_data|
+				existing_day = $data_map[resort_name]['average'][season_day]
+				if existing_day
+					existing_day.update_attributes(
+						base: season_data.to_f / averages_denom_map[resort_name][season_day]
+					)
+					p 'updated existing average snow day'
+				else
+					new_day = SnowDay.create(
+						resort_name: resort_name,
+						resort_id: resort_id,
+						base: season_data.to_f / averages_denom_map[resort_name][season_day],
+						season_day: season_day,
+						generated: true,
+						season_name: 'Average'
+					)
+					p 'created average snow day'
+				end
 			end
 		end
 	end
