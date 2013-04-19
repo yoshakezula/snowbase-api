@@ -5,6 +5,7 @@
 coverage
 InstalledFiles
 logs/*
+json/*.json
 lib/bundler/man
 pkg
 rdoc
