@@ -57,7 +57,7 @@ post '/update-resort' do
     formatted_name: params[:formatted_name],
     state: params[:state]
   )
-  redirect to '/resorts' + resort.name
+  redirect to '/resorts'
 end
 
 # get '/log' do 
@@ -86,9 +86,12 @@ get '/resort/:name' do
   erb :resort
 end
 
-get '/snow-days-map' do
+get '/api/snow-days-map' do
   content_type :json
-  normalize_data.to_json
+  dir = Dir.open 'json'
+  f = File.open('json/' + dir.max, "r")
+  f.read
+  # return_data_map.to_json
   # SnowDay.all.to_json
 end
 

@@ -27,6 +27,27 @@ def get_date_array(start_year)
 end
 
 $data_map = {}
+def return_and_write_data_map()
+	resort_map = {}
+	SnowDay.all.each do |day|
+		resort_name = day.resort_name
+		season = day.season_name
+
+		resort_map[resort_name] = {} if !resort_map[resort_name]
+		resort_map[resort_name][season] = {} if !resort_map[resort_name][season]
+		resort_map[resort_name][season][day.season_day] = {
+			:d => day.date_string,
+			:b => day.base
+		}
+	end
+	timestamp = Time.new.to_s.gsub(/[\s\-\:]/, "")[0..11]
+	File.open('json/' + timestamp + '.json', 'w') do |f|
+		f.write(resort_map.to_json)
+	end
+	p 'wrote ' + timestamp + '.json'
+	resort_map
+end
+
 def normalize_data()
 	p 'starting to build data map'
 	$data_map = {}
@@ -107,9 +128,7 @@ def normalize_data()
 				)
 			# end
 
-			if !$data_map[resort_name][season_name]
-				$data_map[resort_name][season_name] = {}
-			end
+			$data_map[resort_name][season_name] = {} if !$data_map[resort_name][season_name]
 			$data_map[resort_name][season_name][date_string] = day
 		end
 	end
@@ -297,7 +316,6 @@ def build_season_data
 					existing_day.update_attributes(
 						base: season_data.to_f / averages_denom_map[resort_name][season_day]
 					)
-					p 'updated existing average snow day'
 				else
 					new_day = SnowDay.create(
 						resort_name: resort_name,
@@ -313,6 +331,8 @@ def build_season_data
 		end
 	end
 	p 'done building season data'
+	p 'writing data map'
+	return_and_write_data_map
 end
 
 
