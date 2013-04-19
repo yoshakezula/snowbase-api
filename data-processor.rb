@@ -325,7 +325,7 @@ def build_season_data
 						generated: true,
 						season_name: 'Average'
 					)
-					p 'created average snow day'
+					# p 'created average snow day'
 				end
 			end
 		end
