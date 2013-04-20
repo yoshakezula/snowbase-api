@@ -40,11 +40,11 @@ def return_and_write_data_map()
 			:b => day.base
 		}
 	end
-	timestamp = Time.new.to_s.gsub(/[\s\-\:]/, "")[0..11]
-	File.open('json/' + timestamp + '.json', 'w') do |f|
-		f.write(resort_map.to_json)
-	end
-	p 'wrote ' + timestamp + '.json'
+	# timestamp = Time.new.to_s.gsub(/[\s\-\:]/, "")[0..11]
+	# File.open('json/' + timestamp + '.json', 'w') do |f|
+	# 	f.write(resort_map.to_json)
+	# end
+	# p 'wrote ' + timestamp + '.json'
 	resort_map
 end
 
@@ -137,6 +137,10 @@ def normalize_data()
 end
 
 def build_season_data
+	log = Logger.new('logs/data_processor_log.txt')
+	log.level = Logger::WARN
+	log.error('Start processing')
+
 	p 'starting to build season data'
 	data_map = normalize_data()
 	averages_map = {}
