@@ -11,6 +11,7 @@ require './scraper'
 require './data-processor'
 
 if !development?
+  p 'production'
   def get_connection
     return @db_connection if @db_connection
     db = URI.parse(ENV['MONGOHQ_URL'])
@@ -24,6 +25,7 @@ if !development?
 end
 
 if development?
+  p 'development'
   require './development'
 end
 
