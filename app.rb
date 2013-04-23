@@ -1,22 +1,15 @@
 require "bundler/setup"
 require 'sinatra'
+require "sinatra/reloader" if development?
 require 'json'
 require 'mongo'
 require 'uri'
-require 'aws/s3'
 require './resort'
 require './snow-day'
 require './scraper'
 require './data-processor'
 
-if development?
-  p 'development'
-  require './development'
-  require "sinatra/reloader"
-end
-
 if !development?
-  p 'production'
   def get_connection
     return @db_connection if @db_connection
     db = URI.parse(ENV['MONGOHQ_URL'])
@@ -27,9 +20,16 @@ if !development?
   end
 
   db = get_connection
+  
+  # set :server, 'thin'
+
+  # use Rack::CommonLogger
+
+  # log = File.new("logs/sinatra.log", "a+")
+  # log.sync = true
+  # STDOUT.reopen(log)
+  # STDERR.reopen(log)
 end
-
-
 
 get '/delete-resort/:id' do
   content_type :json
@@ -60,6 +60,10 @@ post '/update-resort' do
   redirect to '/resorts'
 end
 
+# get '/log' do 
+#   send_file File.join('logs', 'scraper_log.txt')
+# end
+
 get '/pull/:state/:name' do
   content_type :json
   resort = Resort.where(name: params[:name], state: params[:state]).first_or_create
@@ -87,16 +91,8 @@ get '/api/snow-days-map' do
   dir = Dir.open 'json'
   f = File.open('json/' + dir.max, "r")
   f.read
-end
-
-get '/scraper-log' do
-  f = File.open('logs/scraper_log.txt', "r")
-  f.read
-end
-
-get '/data-processor-log' do
-  f = File.open('logs/data_processor_log.txt', "r")
-  f.read
+  # return_data_map.to_json
+  # SnowDay.all.to_json
 end
 
 get '/api/snow-days' do
@@ -126,17 +122,6 @@ end
 
 get '/build-season-data' do
   content_type :json
-  data_map = build_season_data
-  AWS::S3::Base.establish_connection!(
-    :access_key_id => ENV['AWS_ACCESS_KEY_ID'],
-    :secret_access_key => ENV['AWS_SECRET_ACCESS_KEY']
-  )
-  AWS::S3::S3Object.store(
-    'data_map.json',
-    data_map.to_json,
-    ENV['AWS_BUCKET'],
-    :access => :public_read
-  )
-  p 'wrote https://snowbase-api.s3.amazonaws.com/data_map.json'
+  build_season_data
   SnowDay.all.to_json
 end
