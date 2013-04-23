@@ -6,8 +6,9 @@ gem 'mongo'
 gem 'mongoid'
 gem 'bson_ext'
 gem 'json'
-gem 'thin'
 gem 'nokogiri'
-gem 'debugger'
-gem 'sinatra-reloader'
-gem 'aws-s3'
+gem 'aws-s3', :require => 'aws/s3'
+group :development do
+  gem 'debugger'
+  gem 'sinatra-reloader'
+end

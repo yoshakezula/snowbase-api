@@ -1,6 +1,5 @@
 require "bundler/setup"
 require 'sinatra'
-require "sinatra/reloader" if development?
 require 'json'
 require 'mongo'
 require 'uri'
@@ -9,6 +8,12 @@ require './resort'
 require './snow-day'
 require './scraper'
 require './data-processor'
+
+if development?
+  p 'development'
+  require './development'
+  require "sinatra/reloader"
+end
 
 if !development?
   p 'production'
@@ -24,10 +29,7 @@ if !development?
   db = get_connection
 end
 
-if development?
-  p 'development'
-  require './development'
-end
+
 
 get '/delete-resort/:id' do
   content_type :json
