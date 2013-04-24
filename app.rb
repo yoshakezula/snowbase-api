@@ -3,13 +3,12 @@ require 'sinatra'
 require 'json'
 require 'mongo'
 require 'uri'
-require './resort'
-require './snow-day'
 require './scraper'
 require './data-processor'
 
 if !development?
   p 'production'
+  ENV['MONGOID_ENV'] = 'production'
   def get_connection
     return @db_connection if @db_connection
     db = URI.parse(ENV['MONGOHQ_URL'])
@@ -18,7 +17,6 @@ if !development?
     @db_connection.authenticate(db.user, db.password) unless (db.user.nil? || db.user.nil?)
     @db_connection
   end
-
   db = get_connection
 end
 
@@ -28,6 +26,9 @@ if development?
   require "sinatra/reloader"
   require 'aws/s3'
 end
+
+require './resort'
+require './snow-day'
 
 def write_data_maps(snow_day_map)
   timestamp = Time.new.to_s.gsub(/[\s\-\:]/, "")[0..11]
