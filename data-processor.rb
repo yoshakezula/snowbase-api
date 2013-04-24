@@ -29,7 +29,6 @@ end
 $data_map = {}
 def return_and_write_data_maps()
 	snow_day_map = {}
-	resort_map = {}
 	p 'building snow_day_map'
 	SnowDay.all.each do |day|
 		resort_name = day.resort_name
@@ -42,15 +41,7 @@ def return_and_write_data_maps()
 			:b => day.base
 		}
 	end
-	p 'building resort_map'
-	Resort.all.each do |resort|
-		resort_map[resort.name] = {
-			:formatted_name => resort.formatted_name,
-			:name => resort.name,
-			:state => resort.state
-		}
-	end
-	return snow_day_map, resort_map
+	return snow_day_map
 end
 
 def normalize_data()
@@ -95,18 +86,11 @@ def normalize_data()
 				next
 			end
 
-			begin
-				#delete days jan of first year so we don't have partial data
-				if date.year == first_year && date.month < 11
-					p 'destroying day because it has partial data from first year in dataset' + resort_name + ': ' + date_string.to_s
-					day.destroy
-					next
-				end
-			rescue Exception => e
-				p 'error'
-				p e.inspect
-				p e.backtrace
-				p day.inspect
+			#delete days jan of first year so we don't have partial data
+			if date.year == first_year && date.month < 11
+				p 'destroying day because it has partial data from first year in dataset' + resort_name + ': ' + date_string.to_s
+				day.destroy
+				next
 			end
 
 			# Delete duplicates
