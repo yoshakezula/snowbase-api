@@ -11,12 +11,29 @@ def pullDataFor(resort)
 	log.level = Logger::WARN
 	log.error('Start parse')
 
-	years = ['2007', '2008', '2009', '2010', '2011', '2012', '2013']
+	years = [2007, 2008, 2009, 2010, 2011, 2012, 2013]
 	resort_name = resort.name
+	resort_id = resort._id
+
+	this_year = Time.now.year
+
 	years.each do |year|
-		uri = 'http://www.onthesnow.com/' + resort.state + '/' + resort_name + '/historical-snowfall.html?&y=' + year + '&q=base&v=list#view'
+		#skip if we've already pulled for this year, and it's not the current year
+		if year != this_year && SnowDay.where(:date_string.gt => year * 10000, :date_string.lt => (year + 1) * 10000).length > 0
+			p 'Skipping ' + year.to_s + ' because we\'ve already pulled it'
+			next
+		end
+
+		# if year == this_year then delete the generated snowdays so we can make sure to create all new ones
+		if year == this_year
+			p 'deleting all generated snow days for ' + year.to_s
+			SnowDay.where(:resort_name => resort_name, :generated => true, :date_string.gt => this_year * 10000).destroy_all
+		end
+
+		uri = 'http://www.onthesnow.com/' + resort.state + '/' + resort_name + '/historical-snowfall.html?&y=' + year.to_s + '&q=base&v=list#view'
 		p 'opening nokogiri for ' + uri
 		log.error 'opening nokogiri for ' + uri
+
 		begin
 			doc = Nokogiri::HTML(open(uri))
 
@@ -43,8 +60,6 @@ def pullDataFor(resort)
 
 				date_string = date_string.to_s
 
-				resort_id = Resort.where(:name => resort_name).first._id
-
 				base = cols[3].text.match(/[0-9]+/)[0].to_i
 
 				existing_day = SnowDay.where(:resort_name => resort_name, :date_string => date_string).first
@@ -63,7 +78,7 @@ def pullDataFor(resort)
 					log.error 'new day created'
 					log.error new_day.inspect
 				else
-					if $skipExistingDays && (date.year != Time.now.year) #never skip if the date is this year, because we always want to update for most recent year. But we can ignore past years
+					if $skipExistingDays && (date.year != this_year) #never skip if the date is this year, because we always want to update for most recent year. But we can ignore past years
 						p 'Existing snow day found for ' + resort_name + ': ' + date_string + ', skipping'
 					else
 						p 'Updating snow day for ' + resort_name + ': ' + date_string
@@ -86,6 +101,5 @@ def pullDataFor(resort)
 			p 'error with ' + uri
 			p e
 		end
-	end	
-	normalize_data()
+	end
 end
