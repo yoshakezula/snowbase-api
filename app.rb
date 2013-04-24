@@ -13,7 +13,7 @@ require 'aws/s3'
 
 if !development?
   p 'production'
-  Mongoid.load!('mongoid.yml', :production)
+  # Mongoid.load!('mongoid.yml', :production)
   def get_connection
     return @db_connection if @db_connection
     db = URI.parse(ENV['MONGOHQ_URL'])
