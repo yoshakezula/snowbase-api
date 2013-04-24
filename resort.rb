@@ -1,6 +1,6 @@
 require 'mongo'
 require 'mongoid'
-Mongoid.load!('mongoid.yml')
+# Mongoid.load!('mongoid.yml')
 
 class Resort
 	include Mongoid::Document

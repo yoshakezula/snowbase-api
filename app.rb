@@ -7,10 +7,13 @@ require './resort'
 require './snow-day'
 require './scraper'
 require './data-processor'
+require 'aws/s3'
+
+
 
 if !development?
   p 'production'
-  ENV['MONGOID_ENV'] = 'production'
+  Mongoid.load!('mongoid.yml', :production)
   def get_connection
     return @db_connection if @db_connection
     db = URI.parse(ENV['MONGOHQ_URL'])
@@ -25,9 +28,9 @@ end
 
 if development?
   p 'development'
+  Mongoid.load!('mongoid.yml', :development)
   require './development'
   require "sinatra/reloader"
-  require 'aws/s3'
 end
 
 def write_data_maps(snow_day_map)
