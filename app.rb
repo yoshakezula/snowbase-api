@@ -27,8 +27,33 @@ if development?
   require 'aws/s3'
 end
 
-require './resort'
-require './snow-day'
+class SnowDay
+  include Mongoid::Document
+
+  field :resort_name, :type => String
+  field :resort_id, :type => String
+  field :date, :type => Date
+  field :base, :type => Integer
+  field :date_string, :type => Integer
+  field :precipitation, :type => Integer
+  field :season_snow, :type => Integer
+  field :season_day, :type => Integer
+  field :season_start_year, :type => Integer
+  field :season_end_year, :type => Integer
+  field :season_name, :type => String
+  field :generated, :type => Boolean, :default => false
+
+  index({ resort_name: 1 }, { name: "resort_name_index" })
+  
+end
+
+class Resort
+  include Mongoid::Document
+
+  field :name, :type => String
+  field :state, :type => String
+  field :formatted_name, :type => String
+end
 
 def write_data_maps(snow_day_map)
   timestamp = Time.new.to_s.gsub(/[\s\-\:]/, "")[0..11]
