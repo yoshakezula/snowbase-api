@@ -29,13 +29,25 @@ if development?
   require 'aws/s3'
 end
 
-def write_data_maps(maps)
-  snow_day_map = maps[0]
-  resort_map = maps[1]
+def write_data_maps(snow_day_map)
+  timestamp = Time.new.to_s.gsub(/[\s\-\:]/, "")[0..11]
+
   AWS::S3::Base.establish_connection!(
     :access_key_id => ENV['AWS_ACCESS_KEY_ID'],
     :secret_access_key => ENV['AWS_SECRET_ACCESS_KEY']
   )
+
+  # open existing snow_day_map and write old version to s3
+  old_snow_day_map = open('https://snowbase-api.s3.amazonaws.com/snow_day_map.json').read.to_json
+  AWS::S3::S3Object.store(
+    'snow_day_map_' + timestamp + '.json',
+    old_snow_day_map.to_json,
+    ENV['AWS_BUCKET'],
+    :access => :public_read
+  )
+
+  # write new snow_day_map
+  p 'wrote https://snowbase-api.s3.amazonaws.com/snow_day_map_' + timestamp + '.json'
   AWS::S3::S3Object.store(
     'snow_day_map.json',
     snow_day_map.to_json,
@@ -43,14 +55,29 @@ def write_data_maps(maps)
     :access => :public_read
   )
   p 'wrote https://snowbase-api.s3.amazonaws.com/snow_day_map.json'
-  AWS::S3::S3Object.store(
-    'resort_map.json',
-    resort_map.to_json,
-    ENV['AWS_BUCKET'],
-    :access => :public_read
-  )
-  p 'wrote https://snowbase-api.s3.amazonaws.com/resort_map.json'
-  redirect to '/resorts'
+
+  # open existing resort_map and write old version to s3
+  old_resort_map = open('https://snowbase-api.s3.amazonaws.com/resort_map.json').read.to_json
+  new_resort_map = Resort.all.to_json
+  if old_resort_map != new_resort_map
+    AWS::S3::S3Object.store(
+      'resort_map_' + timestamp + '.json',
+      old_resort_map.to_json,
+      ENV['AWS_BUCKET'],
+      :access => :public_read
+    )
+    p 'wrote https://snowbase-api.s3.amazonaws.com/resort_map_' + timestamp + '.json'
+
+    #Write new resort map
+    AWS::S3::S3Object.store(
+      'resort_map.json',
+      new_resort_map,
+      ENV['AWS_BUCKET'],
+      :access => :public_read
+    )
+    p 'wrote https://snowbase-api.s3.amazonaws.com/resort_map.json'
+    redirect to '/resorts'
+  end
 end
 
 get '/delete-resort/:id' do
@@ -86,7 +113,7 @@ get '/pull/:state/:name' do
   content_type :json
   resort = Resort.where(name: params[:name], state: params[:state]).first_or_create
   pullDataFor(resort)
-  SnowDay.all.to_json
+  redirect to '/api/snow-days/' + resort.name
 end
 
 get '/add/:state/:name' do
@@ -109,13 +136,6 @@ get '/resort/:name' do
   erb :resort
 end
 
-get '/api/snow-days-map' do
-  content_type :json
-  dir = Dir.open 'json'
-  f = File.open('json/' + dir.max, "r")
-  f.read
-end
-
 get '/scraper-log' do
   f = File.open('logs/scraper_log.txt', "r")
   f.read
@@ -134,8 +154,7 @@ end
 
 get '/api/snow-days/:resort_name' do
   content_type :json
-  # normalize_data[params[:resort_name]].to_json
-  SnowDay.find(params[:_id]).to_json
+  SnowDay.where(:resort_name => params[:resort_name]).to_json
 end
 
 get '/delete-generated-snow-days' do
