@@ -7,10 +7,10 @@ gem 'mongoid'
 gem 'bson_ext'
 gem 'json'
 gem 'nokogiri'
-# group :development do
-  # gem 'aws-s3', '0.6.2', :require => 'aws/s3'
+group :development do
+  gem 'aws-s3', '0.6.2', :require => 'aws/s3'
+end
 gem 'sinatra-reloader'
-# end
 gem 'debugger'
 
 

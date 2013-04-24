@@ -27,25 +27,30 @@ def get_date_array(start_year)
 end
 
 $data_map = {}
-def return_and_write_data_map()
+def return_and_write_data_maps()
+	snow_day_map = {}
 	resort_map = {}
+	p 'building snow_day_map'
 	SnowDay.all.each do |day|
 		resort_name = day.resort_name
 		season = day.season_name
 
-		resort_map[resort_name] = {} if !resort_map[resort_name]
-		resort_map[resort_name][season] = {} if !resort_map[resort_name][season]
-		resort_map[resort_name][season][day.season_day] = {
+		snow_day_map[resort_name] = {} if !snow_day_map[resort_name]
+		snow_day_map[resort_name][season] = {} if !snow_day_map[resort_name][season]
+		snow_day_map[resort_name][season][day.season_day] = {
 			:d => day.date_string,
 			:b => day.base
 		}
 	end
-	# timestamp = Time.new.to_s.gsub(/[\s\-\:]/, "")[0..11]
-	# File.open('json/' + timestamp + '.json', 'w') do |f|
-	# 	f.write(resort_map.to_json)
-	# end
-	# p 'wrote ' + timestamp + '.json'
-	resort_map
+	p 'building resort_map'
+	Resort.all.each do |resort|
+		resort_map[resort.name] = {
+			:formatted_name => resort.formatted_name,
+			:name => resort.name,
+			:state => resort.state
+		}
+	end
+	return snow_day_map, resort_map
 end
 
 def normalize_data()
@@ -312,7 +317,6 @@ def build_season_data
 		end
 
 		#calculate averages
-		# debugger
 		averages_map.each do |resort_name, resort_data|
 			resort_data.each do |season_day, season_data|
 				existing_day = $data_map[resort_name]['average'][season_day]
@@ -336,7 +340,7 @@ def build_season_data
 	end
 	p 'done building season data'
 	p 'writing data map'
-	return_and_write_data_map
+	return_and_write_data_maps
 end
 
 

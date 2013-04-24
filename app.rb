@@ -29,6 +29,30 @@ if development?
   require 'aws/s3'
 end
 
+def write_data_maps(maps)
+  snow_day_map = maps[0]
+  resort_map = maps[1]
+  AWS::S3::Base.establish_connection!(
+    :access_key_id => ENV['AWS_ACCESS_KEY_ID'],
+    :secret_access_key => ENV['AWS_SECRET_ACCESS_KEY']
+  )
+  AWS::S3::S3Object.store(
+    'snow_day_map.json',
+    snow_day_map.to_json,
+    ENV['AWS_BUCKET'],
+    :access => :public_read
+  )
+  p 'wrote https://snowbase-api.s3.amazonaws.com/snow_day_map.json'
+  AWS::S3::S3Object.store(
+    'resort_map.json',
+    resort_map.to_json,
+    ENV['AWS_BUCKET'],
+    :access => :public_read
+  )
+  p 'wrote https://snowbase-api.s3.amazonaws.com/resort_map.json'
+  redirect to '/resorts'
+end
+
 get '/delete-resort/:id' do
   content_type :json
   resort = Resort.where(_id: params[:id]).first
@@ -63,6 +87,11 @@ get '/pull/:state/:name' do
   resort = Resort.where(name: params[:name], state: params[:state]).first_or_create
   pullDataFor(resort)
   SnowDay.all.to_json
+end
+
+get '/add/:state/:name' do
+  resort = Resort.where(name: params[:name], state: params[:state]).first_or_create
+  redirect to '/resort/' + resort.name
 end
 
 get '/api/resorts' do
@@ -122,19 +151,11 @@ get '/delete-snow-days-for/:resort_id' do
   'deleted'
 end
 
+get '/write-data-maps' do
+  write_data_maps(return_and_write_data_maps)
+end
+
 get '/build-season-data' do
-  content_type :json
-  data_map = build_season_data
-  AWS::S3::Base.establish_connection!(
-    :access_key_id => ENV['AWS_ACCESS_KEY_ID'],
-    :secret_access_key => ENV['AWS_SECRET_ACCESS_KEY']
-  )
-  AWS::S3::S3Object.store(
-    'data_map.json',
-    data_map.to_json,
-    ENV['AWS_BUCKET'],
-    :access => :public_read
-  )
-  p 'wrote https://snowbase-api.s3.amazonaws.com/data_map.json'
-  SnowDay.all.to_json
+  #Pass results of build_season_data to write_data_maps
+  write_data_maps(build_season_data)
 end
