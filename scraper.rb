@@ -19,7 +19,7 @@ def pullDataFor(resort)
 
 	years.each do |year|
 		#skip if we've already pulled for this year, and it's not the current year
-		if year != this_year && SnowDay.where(:date_string.gt => year * 10000, :date_string.lt => (year + 1) * 10000).length > 0
+		if year != this_year && SnowDay.where(:resort_name => resort_name, :date_string.gt => year * 10000, :date_string.lt => (year + 1) * 10000).length > 0
 			p 'Skipping ' + year.to_s + ' because we\'ve already pulled it'
 			next
 		end
