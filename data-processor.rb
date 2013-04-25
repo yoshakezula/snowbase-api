@@ -3,6 +3,33 @@ require './snow-day'
 require './resort'
 require 'debugger'
 
+$state_map = {
+	'vermont' => {
+		:state_short => 'VT',
+		:state_formatted => 'vermont'
+	},
+	'colorado' => {
+		:state_short => 'CO',
+		:state_formatted => 'colorado'
+	},
+	'california' => {
+		:state_short => 'CA',
+		:state_formatted => 'california'
+	},
+	'northeast' => {
+		:state_short => 'VT',
+		:state_formatted => 'vermont'
+	},
+	'utah' => {
+		:state_short => 'UT',
+		:state_formatted => 'utah'
+	},
+	'wyoming' => {
+		:state_short => 'WY',
+		:state_formatted => 'wyoming'
+	}
+}
+
 def get_date_array(start_year)
 	date_array = []
 	30.times do |i|
@@ -27,6 +54,14 @@ def get_date_array(start_year)
 end
 
 $data_map = {}
+
+def fill_resort_data(resort)
+	resort.update_attributes(
+		state_short: $state_map[resort.state][:state_short],
+		state_formatted: $state_map[resort.state][:state_formatted]
+	)
+end
+
 def return_and_write_data_maps()
 	snow_day_map = {}
 	p 'building snow_day_map'
@@ -63,62 +98,67 @@ def normalize_data()
 		first_year = nil
 
 		snowdays.each do |day|
-			#skip if snow day is an average and not an actual day belonging to a season
-			if day.season_name == 'Average'
-				$data_map[resort_name]['average'][day.season_day] = day
-				next
-			end
-
-			if day.date == nil
-				p 'day with null date found, destroying'
-				day.destroy
-				next
-			end
-			date = day.date
-			date_string = day.date_string
-			if first_year == nil ; first_year = date.year ; end
-
-			# Delete days outside of the season, or if it's feb 29. Start season in Nov and end in april
-			if (date.month < 11 && date.month > 4) || (date.month == 2 && date.day == 29)
-				p 'destroying day outside season for ' + resort_name + ': ' + date_string.to_s
-				p day.inspect
-				day.destroy
-				next
-			end
-
-			#delete days jan of first year so we don't have partial data
-			if date.year == first_year && date.month < 11
-				p 'destroying day because it has partial data from first year in dataset' + resort_name + ': ' + date_string.to_s
-				day.destroy
-				next
-			end
-
-			# Delete duplicates
-			if date_string == prev_date
-				p 'destroying duplicate day ' + resort_name + ': ' + date_string.to_s
-				day.destroy
-				next
-			end
-
-			# if day.season_start_year == nil || day.season_name == nil
-				# Populate season
-				if date.month > 10
-					season_start_year = date.year
-					season_end_year = date.year + 1
-				elsif date.month < 5
-					season_start_year = date.year - 1
-					season_end_year = date.year
+			begin
+				#skip if snow day is an average and not an actual day belonging to a season
+				if day.season_name == 'Average'
+					$data_map[resort_name]['average'][day.season_day] = day
+					next
 				end
-				season_name = season_start_year.to_s + '-' + season_end_year.to_s.slice(-2,2)
-				day.update_attributes(
-					season_start_year: season_start_year,
-					season_end_year: season_end_year,
-					season_name: season_name
-				)
-			# end
 
-			$data_map[resort_name][season_name] = {} if !$data_map[resort_name][season_name]
-			$data_map[resort_name][season_name][date_string] = day
+				if day.date == nil
+					p 'day with null date found, destroying'
+					day.destroy
+					next
+				end
+				date = day.date
+				date_string = day.date_string
+				if first_year == nil ; first_year = date.year ; end
+
+				# Delete days outside of the season, or if it's feb 29. Start season in Nov and end in april
+				if (date.month < 11 && date.month > 4) || (date.month == 2 && date.day == 29)
+					p 'destroying day outside season for ' + resort_name + ': ' + date_string.to_s
+					day.destroy
+					next
+				end
+
+				#delete days jan of first year so we don't have partial data
+				if date.year == first_year && date.month < 11
+					p 'destroying day because it has partial data from first year in dataset' + resort_name + ': ' + date_string.to_s
+					day.destroy
+					next
+				end
+
+				# Delete duplicates
+				if date_string == prev_date
+					p 'destroying duplicate day ' + resort_name + ': ' + date_string.to_s
+					day.destroy
+					next
+				end
+
+				# if day.season_start_year == nil || day.season_name == nil
+					# Populate season
+					if date.month > 10
+						season_start_year = date.year
+						season_end_year = date.year + 1
+					elsif date.month < 5
+						season_start_year = date.year - 1
+						season_end_year = date.year
+					end
+					season_name = season_start_year.to_s + '-' + season_end_year.to_s.slice(-2,2)
+					day.update_attributes(
+						season_start_year: season_start_year,
+						season_end_year: season_end_year,
+						season_name: season_name
+					)
+				# end
+
+				$data_map[resort_name][season_name] = {} if !$data_map[resort_name][season_name]
+				$data_map[resort_name][season_name][date_string] = day
+			rescue Exception => e
+				p $data_map[resort_name]
+				p e.inspect
+				p e.backtrace
+			end
 		end
 	end
 	p 'built data map'

@@ -99,6 +99,7 @@ end
 get '/pull/all' do
   content_type :json
   Resort.all.each do |resort|
+    fill_resort_data(resort)
     pullDataFor(resort)
   end
   SnowDay.all.to_json
@@ -109,7 +110,9 @@ post '/update-resort' do
   resort.update_attributes(
     name: params[:name],
     formatted_name: params[:formatted_name],
-    state: params[:state]
+    state: params[:state],
+    state_short: params[:state_short],
+    state_formatted: params[:state_formatted],
   )
   redirect to '/resorts'
 end
@@ -123,6 +126,7 @@ end
 
 get '/add/:state/:name' do
   resort = Resort.where(name: params[:name], state: params[:state]).first_or_create
+  fill_resort_data(resort)
   redirect to '/resort/' + resort.name
 end
 

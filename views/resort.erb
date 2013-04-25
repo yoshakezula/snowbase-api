@@ -6,9 +6,11 @@
 <body>
 
 <form action="/update-resort" method="post">
-		<input type="hidden" name="id" value="<%=@resort._id%>">
-		<label for="name">name:</label><input type="text" name="name" value="<%=@resort.name%>" /><br>
-		<label for="state">state:</label><input type="text" name="state" value="<%=@resort.state%>" /><br>
-		<label for="formatted_name">formatted name:</label><input type="text" name="formatted_name" value="<%=@resort.formatted_name%>" /><br>
-		<a href="/resorts">Back</a><input type="submit" value="Save" />
+    <input type="hidden" name="id" value="<%=@resort._id%>">
+    <label for="name">name:</label><input type="text" name="name" value="<%=@resort.name%>" /><br>
+    <label for="state">state:</label><input type="text" name="state" value="<%=@resort.state%>" /><br>
+    <label for="formatted_name">formatted name:</label><input type="text" name="formatted_name" value="<%=@resort.formatted_name%>" /><br>
+    <label for="state_short">state abbrev:</label><input type="text" name="state_short" value="<%=@resort.state_short%>" /><br>
+    <label for="state_formatted">formatted state name:</label><input type="text" name="state_formatted" value="<%=@resort.state_formatted%>" /><br>
+    <a href="/resorts">Back</a><input type="submit" value="Save" />
 </form>
